@@ -1,0 +1,32 @@
+name: solve
+on:
+  push:
+    paths: ['job/**']
+permissions:
+  contents: write
+jobs:
+  s:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        i: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numba numpy
+      - name: solve
+        run: |
+          LIMIT=$(cat job/limit.txt 2>/dev/null || echo 420)
+          cd job
+          if python3 ../sat_solver.py clauses.json sol.txt $LIMIT 0 $(nproc); then
+            git config user.name bot
+            git config user.email bot@example.com
+            git checkout -b sol-${{ github.run_id }}-${{ matrix.i }}
+            git add -f sol.txt
+            git commit -m sol
+            git push origin HEAD
+          fi
